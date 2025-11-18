@@ -94,11 +94,14 @@ function displayProducts(products) {
   productsContainer.innerHTML = products
     .map(
       (product) => `
-    <div class="product-card" data-product-id="${product.id}">
+    <div class="product-card" data-product-id="${product.id}" tabindex="0">
       <img src="${product.image}" alt="${product.name}">
       <div class="product-info">
         <h3>${product.name}</h3>
         <p>${product.brand}</p>
+      </div>
+      <div class="product-overlay">
+        <p>${product.description}</p>
       </div>
     </div>
   `
