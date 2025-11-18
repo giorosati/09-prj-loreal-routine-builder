@@ -10,8 +10,11 @@ const chatInput = document.getElementById("userInput");
 
 const STORAGE_KEY = "loreal-selected-products";
 
-/* Change this URL when you deploy the Worker */
-const workerBaseUrl = "http://127.0.0.1:8787";
+/* For local hosting */
+// const workerBaseUrl = "http://127.0.0.1:8787";
+
+/* For deployment */
+const workerBaseUrl = 'https://loreal-app-worker.giovanni-rosati.workers.dev'
 
 /* Keep every message we send so we can keep the conversation alive */
 const conversation = [];
