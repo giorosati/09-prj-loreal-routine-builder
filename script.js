@@ -2,6 +2,7 @@
 const categoryFilter = document.getElementById("categoryFilter");
 const productsContainer = document.getElementById("productsContainer");
 const selectedProductsList = document.getElementById("selectedProductsList");
+const generateRoutineButton = document.getElementById("generateRoutine");
 const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
 const chatInput = document.getElementById("userInput");
@@ -13,6 +14,17 @@ const workerBaseUrl = "http://127.0.0.1:8787";
 const conversation = [];
 /* Track selected products so we can toggle them */
 const selectedProducts = new Map();
+/* Add the system message once so replies stay on topic */
+function ensureSystemMessage() {
+  const hasSystem = conversation.some((message) => message.role === "system");
+  if (!hasSystem) {
+    conversation.unshift({
+      role: "system",
+      content:
+        "You are a friendly L'Oréal beauty advisor. Craft concise, step-by-step routines, noting morning and evening use, and explain why each recommended product fits.",
+    });
+  }
+}
 /* Cache the product catalog after the first load */
 let allProducts = [];
 
@@ -37,6 +49,8 @@ function addChatMessage(role, text) {
 
 /* Ask our Worker for a reply from OpenAI */
 async function requestChatCompletion() {
+  ensureSystemMessage();
+
   const response = await fetch(`${workerBaseUrl}/`, {
     method: "POST",
     headers: {
@@ -184,6 +198,15 @@ function updateSelectedStyles() {
   });
 }
 
+function getSelectedProductsData() {
+  return Array.from(selectedProducts.values()).map((product) => ({
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+    description: product.description,
+  }));
+}
+
 loadProducts().then((products) => {
   allProducts = products;
 });
@@ -215,3 +238,32 @@ chatForm.addEventListener("submit", async (e) => {
     console.error("Chat error", error);
   }
 });
+
+if (generateRoutineButton) {
+  generateRoutineButton.addEventListener("click", async () => {
+    const items = getSelectedProductsData();
+
+    if (items.length === 0) {
+      addChatMessage("assistant", "Select at least one product to build a personalized routine.");
+      return;
+    }
+
+    addChatMessage("user", "Please create a personalized routine with my selected products.");
+
+    conversation.push({
+      role: "user",
+      content: `Create a personalized beauty routine using the following selected products provided as JSON. Include morning and evening steps, explain each recommendation briefly, and suggest the order of application.\n${JSON.stringify(items, null, 2)}`,
+    });
+
+    const assistantBubble = addChatMessage("assistant", "Building your personalized routine…");
+
+    try {
+      const reply = await requestChatCompletion();
+      conversation.push({ role: "assistant", content: reply });
+      assistantBubble.textContent = reply;
+    } catch (error) {
+      assistantBubble.textContent = "Sorry, I couldn't build the routine. Please try again.";
+      console.error("Routine generation error", error);
+    }
+  });
+}
