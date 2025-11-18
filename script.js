@@ -21,12 +21,37 @@ function ensureSystemMessage() {
     conversation.unshift({
       role: "system",
       content:
-        "You are a friendly L'Oréal beauty advisor. Craft concise, step-by-step routines, noting morning and evening use, and explain why each recommended product fits.",
+        "You are the L'Oréal Smart Product Advisor. Only answer questions about L'Oréal products, skincare routines, ingredients, or recommendations, and politely decline anything else. When helping with routines, craft concise step-by-step guidance, call out morning versus evening use, and explain why each recommended product fits.",
     });
   }
 }
 /* Cache the product catalog after the first load */
 let allProducts = [];
+
+/* Simple keyword check to keep questions beauty-focused */
+function isAllowedTopic(message) {
+  const normalized = message.toLowerCase();
+  const keywords = [
+    "skin",
+    "skincare",
+    "hair",
+    "haircare",
+    "makeup",
+    "fragrance",
+    "routine",
+    "beauty",
+    "product",
+    "ingredient",
+    "serum",
+    "cleanser",
+    "moisturizer",
+    "spf",
+    "l'oreal",
+    "loreal"
+  ];
+
+  return keywords.some((keyword) => normalized.includes(keyword)) || normalized.trim().length <= 6;
+}
 
 /* Helper to show a message bubble in the chat window */
 function addChatMessage(role, text) {
@@ -219,6 +244,15 @@ chatForm.addEventListener("submit", async (e) => {
 
   const userMessage = chatInput.value.trim();
   if (!userMessage) {
+    return;
+  }
+
+  if (!isAllowedTopic(userMessage)) {
+    addChatMessage(
+      "assistant",
+      "Let's stay focused on beauty routines and products. Ask me about skincare, haircare, makeup, fragrance, or your L'Oréal routine."
+    );
+    chatInput.value = "";
     return;
   }
 
