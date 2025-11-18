@@ -2,10 +2,13 @@
 const categoryFilter = document.getElementById("categoryFilter");
 const productsContainer = document.getElementById("productsContainer");
 const selectedProductsList = document.getElementById("selectedProductsList");
+const clearSelectedButton = document.getElementById("clearSelectedProducts");
 const generateRoutineButton = document.getElementById("generateRoutine");
 const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
 const chatInput = document.getElementById("userInput");
+
+const STORAGE_KEY = "loreal-selected-products";
 
 /* Change this URL when you deploy the Worker */
 const workerBaseUrl = "http://127.0.0.1:8787";
@@ -54,15 +57,101 @@ function isAllowedTopic(message) {
 }
 
 /* Helper to show a message bubble in the chat window */
-function addChatMessage(role, text) {
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function applyInlineFormatting(content) {
+  return content
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>")
+    .replace(/`(.*?)`/g, "<code>$1</code>");
+}
+
+function renderMarkdown(text) {
+  const escaped = escapeHtml(text).replace(/\r\n/g, "\n");
+  const lines = escaped.split("\n");
+  const htmlParts = [];
+  let listBuffer = null;
+
+  const flushList = () => {
+    if (!listBuffer) {
+      return;
+    }
+    const items = listBuffer.items.join("");
+    htmlParts.push(`<${listBuffer.type}>${items}</${listBuffer.type}>`);
+    listBuffer = null;
+  };
+
+  const addListItem = (type, value) => {
+    if (!listBuffer || listBuffer.type !== type) {
+      flushList();
+      listBuffer = { type, items: [] };
+    }
+    listBuffer.items.push(`<li>${applyInlineFormatting(value)}</li>`);
+  };
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+
+    if (trimmed === "") {
+      flushList();
+      htmlParts.push("<br>");
+      return;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,3})\s+(.*)$/);
+    if (headingMatch) {
+      flushList();
+      const level = headingMatch[1].length;
+      const content = applyInlineFormatting(headingMatch[2]);
+      htmlParts.push(`<h${level}>${content}</h${level}>`);
+      return;
+    }
+
+    const orderedMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+    if (orderedMatch) {
+      addListItem("ol", orderedMatch[2]);
+      return;
+    }
+
+    const unorderedMatch = trimmed.match(/^[-*]\s+(.*)$/);
+    if (unorderedMatch) {
+      addListItem("ul", unorderedMatch[1]);
+      return;
+    }
+
+    flushList();
+    htmlParts.push(`<p>${applyInlineFormatting(trimmed)}</p>`);
+  });
+
+  flushList();
+
+  return htmlParts
+    .join("")
+    .replace(/(<br>){2,}/g, "<br>")
+    .replace(/<br>(<\/h[1-3]>)/g, "$1")
+    .replace(/(<p>)(<br>)+/g, "$1");
+}
+
+function addChatMessage(role, text, options = {}) {
   const wrapper = document.createElement("div");
   wrapper.className = `chat-message ${role}`;
 
   const title = document.createElement("strong");
   title.textContent = role === "user" ? "You:" : "Advisor:";
 
-  const body = document.createElement("p");
-  body.textContent = text;
+  const body = document.createElement(options.isMarkdown ? "div" : "p");
+  if (options.isMarkdown) {
+    body.innerHTML = renderMarkdown(text);
+  } else {
+    body.textContent = text;
+  }
 
   wrapper.appendChild(title);
   wrapper.appendChild(body);
@@ -186,11 +275,15 @@ function toggleProduct(product) {
   }
   renderSelectedProducts();
   updateSelectedStyles();
+  persistSelectedProducts();
 }
 
 function renderSelectedProducts() {
   if (selectedProducts.size === 0) {
     selectedProductsList.innerHTML = `<p class="selected-placeholder">No products selected yet.</p>`;
+    if (clearSelectedButton) {
+      clearSelectedButton.disabled = true;
+    }
     return;
   }
 
@@ -211,8 +304,13 @@ function renderSelectedProducts() {
       selectedProducts.delete(String(id));
       renderSelectedProducts();
       updateSelectedStyles();
+      persistSelectedProducts();
     });
   });
+
+  if (clearSelectedButton) {
+    clearSelectedButton.disabled = false;
+  }
 }
 
 function updateSelectedStyles() {
@@ -221,6 +319,35 @@ function updateSelectedStyles() {
     const id = card.dataset.productId;
     card.classList.toggle("selected", selectedProducts.has(String(id)));
   });
+}
+
+function persistSelectedProducts() {
+  const payload = Array.from(selectedProducts.entries()).map(([id, product]) => ({
+    id,
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+    description: product.description,
+    image: product.image,
+  }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+function hydrateSelectedProducts() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      return;
+    }
+    const parsed = JSON.parse(stored);
+    parsed.forEach((product) => {
+      if (product && product.id) {
+        selectedProducts.set(String(product.id), product);
+      }
+    });
+  } catch (error) {
+    console.error("Failed to hydrate selected products", error);
+  }
 }
 
 function getSelectedProductsData() {
@@ -234,6 +361,9 @@ function getSelectedProductsData() {
 
 loadProducts().then((products) => {
   allProducts = products;
+  hydrateSelectedProducts();
+  renderSelectedProducts();
+  updateSelectedStyles();
 });
 
 renderSelectedProducts();
@@ -260,13 +390,13 @@ chatForm.addEventListener("submit", async (e) => {
   conversation.push({ role: "user", content: userMessage });
   chatInput.value = "";
 
-  const assistantBubble = addChatMessage("assistant", "Thinking…");
+  const assistantBubble = addChatMessage("assistant", "Thinking…", { isMarkdown: true });
 
   try {
     const reply = await requestChatCompletion();
     conversation.push({ role: "assistant", content: reply });
 
-    assistantBubble.textContent = reply;
+    assistantBubble.innerHTML = renderMarkdown(reply);
   } catch (error) {
     assistantBubble.textContent = "Sorry, something went wrong. Please try again.";
     console.error("Chat error", error);
@@ -282,22 +412,31 @@ if (generateRoutineButton) {
       return;
     }
 
-    addChatMessage("user", "Please create a personalized routine with my selected products.");
+      addChatMessage("user", "Please create a personalized routine with my selected products.");
 
     conversation.push({
       role: "user",
       content: `Create a personalized beauty routine using the following selected products provided as JSON. Include morning and evening steps, explain each recommendation briefly, and suggest the order of application.\n${JSON.stringify(items, null, 2)}`,
     });
 
-    const assistantBubble = addChatMessage("assistant", "Building your personalized routine…");
+    const assistantBubble = addChatMessage("assistant", "Building your personalized routine…", { isMarkdown: true });
 
     try {
       const reply = await requestChatCompletion();
       conversation.push({ role: "assistant", content: reply });
-      assistantBubble.textContent = reply;
+      assistantBubble.innerHTML = renderMarkdown(reply);
     } catch (error) {
       assistantBubble.textContent = "Sorry, I couldn't build the routine. Please try again.";
       console.error("Routine generation error", error);
     }
+  });
+}
+
+if (clearSelectedButton) {
+  clearSelectedButton.addEventListener("click", () => {
+    selectedProducts.clear();
+    renderSelectedProducts();
+    updateSelectedStyles();
+    persistSelectedProducts();
   });
 }

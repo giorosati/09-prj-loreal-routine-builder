@@ -84,7 +84,7 @@ body {
   padding: 20px;
   font-size: 18px;
   line-height: 1.5;
-  height: 250px;
+  height: 375px;
   overflow-y: auto;
   background: #ffffff;
   color: #000000;
@@ -175,6 +175,21 @@ body {
   background: #ffffff;
   border: 2px solid #e3a635;
   color: #000000;
+}
+
+.chat-message.assistant > div,
+.chat-message.assistant > p {
+  padding-left: 4px;
+}
+
+.chat-message.assistant ul,
+.chat-message.assistant ol {
+  margin: 12px 0 12px 20px;
+  padding-left: 12px;
+}
+
+.chat-message.assistant li {
+  margin-bottom: 8px;
 }
 
 /* visually hidden */
@@ -321,15 +336,49 @@ body {
   background: #040404;
 }
 
+.selected-products-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
 .selected-products h2 {
   font-size: 20px;
-  margin-bottom: 20px;
 }
 
 #selectedProductsList {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.clear-selected-btn {
+  border: 1px solid #ff003b;
+  background: transparent;
+  color: #ff003b;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.clear-selected-btn:hover:enabled {
+  background: #ff003b;
+  color: #ffffff;
+}
+
+.clear-selected-btn:focus-visible {
+  outline: 2px solid #ff003b;
+  outline-offset: 2px;
+}
+
+.clear-selected-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .selected-placeholder {
