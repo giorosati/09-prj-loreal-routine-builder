@@ -8,7 +8,8 @@
 /* —— body + fonts —— */
 body {
   font-family: "Montserrat", Arial, Helvetica, sans-serif;
-  color: #333;
+  color: #ffffff;
+  background: #000000;
   display: flex;
   justify-content: center;
 }
@@ -16,13 +17,18 @@ body {
 .page-wrapper {
   width: 90%;
   max-width: 900px;
+  background: #000000;
 }
 
 /* header */
 .site-header {
   text-align: center;
   padding-top: 50px;
-  padding-bottom: 10px;
+  padding-bottom: 20px;
+  background: #ffffff;
+  color: #000000;
+  border-bottom: 2px solid #e3a635;
+  border-radius: 0 0 12px 12px;
 }
 
 .logo {
@@ -34,6 +40,7 @@ body {
   font-size: 22px;
   font-weight: 500;
   margin-bottom: 10px;
+  text-transform: uppercase;
 }
 
 /* category filter */
@@ -46,24 +53,26 @@ body {
   width: 100%;
   padding: 16px;
   font-size: 18px;
-  border: 2px solid #000;
+  border: 2px solid #e3a635;
   border-radius: 8px;
   cursor: pointer;
-  background-color: white;
+  background-color: #111111;
+  color: #ffffff;
   font-weight: 500;
 }
 
 .search-section select:focus {
   outline: none;
-  border-color: #666;
+  border-color: #ff003b;
 }
 
 /* chat section */
 .chatbox {
   margin: 40px 0;
-  border: 2px solid #000;
-  border-radius: 8px;
+  border: 2px solid #e3a635;
+  border-radius: 12px;
   padding: 26px;
+  background: #040404;
 }
 
 .chatbox h2 {
@@ -77,8 +86,10 @@ body {
   line-height: 1.5;
   height: 250px;
   overflow-y: auto;
-  background: #fafafa;
+  background: #ffffff;
+  color: #000000;
   margin-bottom: 20px;
+  border-radius: 10px;
 }
 
 /* placeholder message */
@@ -86,7 +97,7 @@ body {
   width: 100%;
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: #e3a635;
   font-size: 18px;
 }
 
@@ -102,18 +113,23 @@ body {
   padding: 12px;
   font-size: 18px;
   border: none;
-  border-bottom: 2px solid #ccc;
+  border-bottom: 2px solid #e3a635;
   background: transparent;
+  color: #ffffff;
 }
 
 .chat-form input:focus {
   outline: none;
-  border-bottom-color: #000;
+  border-bottom-color: #ff003b;
+}
+
+.chat-form input::placeholder {
+  color: #cccccc;
 }
 
 .chat-form button {
   font-size: 18px;
-  background: #000;
+  background: #ff003b;
   color: #fff;
   border: none;
   padding: 12px;
@@ -127,12 +143,38 @@ body {
 }
 
 .chat-form button:hover {
-  background: #666666;
+  background: #000000;
 }
 
 .chat-form button:focus {
-  outline: 2px solid #000;
+  outline: 2px solid #ff003b;
   outline-offset: 2px;
+}
+
+.chat-message {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  line-height: 1.5;
+}
+
+.chat-message strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.chat-message.user {
+  background: #ff003b;
+  color: #ffffff;
+}
+
+.chat-message.assistant {
+  background: #ffffff;
+  border: 2px solid #e3a635;
+  color: #000000;
 }
 
 /* visually hidden */
@@ -153,7 +195,7 @@ body {
   margin: 60px 0 40px;
   text-align: center;
   font-size: 14px;
-  color: #666;
+  color: #aaaaaa;
 }
 
 .site-footer nav {
@@ -162,12 +204,12 @@ body {
 
 .site-footer a {
   margin: 0 8px;
-  color: #000;
+  color: #ff003b;
   text-decoration: none;
 }
 
 .site-footer a:hover {
-  color: #666666;
+  color: #e3a635;
 }
 
 /* products grid */
@@ -180,12 +222,26 @@ body {
 
 .product-card {
   flex: 0 1 calc(33.333% - 14px);
-  border: 1px solid #ccc;
+  border: 1px solid #e3a635;
   padding: 15px;
   border-radius: 4px;
   display: flex;
   gap: 15px;
   min-height: 160px;
+  background: #0d0d0d;
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+}
+
+.product-card.selected {
+  border-color: #ff003b;
+  box-shadow: 0 0 0 3px rgba(255, 0, 59, 0.35);
 }
 
 .product-card img {
@@ -210,15 +266,16 @@ body {
 
 .product-card p {
   font-size: 14px;
-  color: #666;
+  color: #dddddd;
 }
 
 /* selected products */
 .selected-products {
   margin: 40px 0;
   padding: 20px;
-  border: 2px solid #000;
-  border-radius: 8px;
+  border: 2px solid #e3a635;
+  border-radius: 12px;
+  background: #040404;
 }
 
 .selected-products h2 {
@@ -232,6 +289,44 @@ body {
   gap: 10px;
 }
 
+.selected-placeholder {
+  color: #e3a635;
+  font-size: 16px;
+}
+
+.selected-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid #ff003b;
+  background: rgba(255, 0, 59, 0.15);
+  color: #ffffff;
+}
+
+.selected-remove {
+  background: #ff003b;
+  color: #ffffff;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.selected-remove:hover {
+  background: #000000;
+}
+
+.selected-remove:focus {
+  outline: 2px solid #ff003b;
+  outline-offset: 2px;
+}
+
 .generate-btn {
   width: 100%;
   margin-top: 20px;
@@ -239,7 +334,7 @@ body {
   font-size: 18px;
   font-weight: 500;
   color: #fff;
-  background: #000;
+  background: #ff003b;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -247,7 +342,12 @@ body {
 }
 
 .generate-btn:hover {
-  background: #666;
+  background: #000000;
+}
+
+.generate-btn:focus {
+  outline: 2px solid #ff003b;
+  outline-offset: 2px;
 }
 
 .generate-btn i {
